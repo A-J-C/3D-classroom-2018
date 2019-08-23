@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Mxcm21's Classroom</title>
+
+    <!-- CSS file -->
+    <link rel="stylesheet" href="classroom.css">
+    <link rel="shortcut icon" type="image/x-ixon" href="assets/icon.jpg">
+
+    <!-- load libraries -->
+    <script src="assets/library/webgl-utils.js"></script>
+    <script src="assets/library/webgl-debug.js"></script>
+    <script src="assets/library/cuon-utils.js"></script>
+    <script src="assets/library/cuon-matrix.js"></script>
+
+    <!-- load jQuery -->
+    <script src="assets/library/jQuery.js"></script>
+
+    <!-- Load my js files, these have been split to provide easier to read scripts -->
+    <script src="scripts/buffers.js"></script>
+	<script src="scripts/drawer.js"></script>
+    <script src="scripts/objects.js"></script>
+    <script src="scripts/lightHandler.js"></script>
+    <script src="scripts/objectHandler.js"></script>
+	<script src="scripts/normalHandler.js"></script>
+    <script src="scripts/classroom.js"></script>
+
+    <!-- displays frame rate -->
+    <script src="scripts/framerate.js"></script>
+
+    <!-- Shader programs -->
+    <script id="vshader" type="x-shader/x-vertex">
+        // vertex shader
+        attribute vec4 a_Position;
+        attribute vec4 a_Normal;
+		attribute vec2 a_textureCoord;
+        uniform mat4 u_ModelMatrix;
+        uniform mat4 u_NormalMatrix;
+        uniform mat4 u_ViewMatrix;
+        uniform mat4 u_ProjMatrix;
+		varying vec3 v_Position;
+		varying vec3 v_Normal;
+		varying vec2 v_textureCoord;
+
+        void main() {
+			gl_Position = u_ProjMatrix * u_ViewMatrix * u_ModelMatrix * a_Position;      // calculates position
+			v_Position = vec3(u_ModelMatrix * a_Position);                               // passes on position
+			v_Normal = normalize((u_NormalMatrix * a_Normal).xyz);                       // passes normal
+			v_textureCoord = a_textureCoord; 											 // pass texture coords
+		}
+    </script>
+
+    <script id="fshader" type="x-shader/x-fragment">
+        // fragment shader which controls colour instead of in vertex
+        #ifdef GL_FRAGMENT_PRECISION_HIGH
+            precision highp float;
+        #else
+            precision mediump float;
+        #endif
+        uniform vec4 u_Colour;
+		uniform vec3 u_LightColour;
+        uniform vec3 u_LightDirection;
+		uniform vec3 u_AmbientLight;
+		uniform vec3 u_pLightPositions[3];				                                 // array for multiple point lights
+		uniform sampler2D u_texture;
+		uniform float u_pointLightOn[3];				                                 // to turn point lights on and off
+        uniform float u_directScalar;
+		uniform float u_pointScalar;
+        uniform float u_projector;
+		uniform bool u_isLighting;
+		uniform bool u_isTextured;
+		uniform bool u_globalTextures;
+		varying vec3 v_Position;
+		varying vec3 v_Normal;
+		varying vec3 v_pLightPositions[3];
+		varying vec2 v_textureCoord;
+
+        void main() {
+			if(u_isLighting) {
+				/* direct lighting */
+				float nDotL = max(dot(v_Normal, u_LightDirection), 0.0);
+				vec3 lighting = u_LightColour * nDotL * u_directScalar * u_Colour.rgb;
+
+
+                /* point lighting loops as it will have lighting from each point light */
+                for(int i = 0; i < 3; i++) {
+                    vec3 u_pLightPos = u_pLightPositions[i];
+                    vec3 distanceFromLight = u_pLightPos - v_Position;                  // caclulate distance from light
+    				float lightLaw = 1000.0/pow(length(distanceFromLight), 2.0);        // handles inverse square law for light
+                    float specular = dot(v_Normal, distanceFromLight)/                  // basic specular lighting
+                        (length(distanceFromLight) * length(v_Normal));
+
+
+    				float pointNDotL = max(dot(v_Normal, normalize(u_pLightPos -        // calculate nDotL for point lighting
+                        vec3(v_Position))), 0.0);
+                    pointNDotL = pow(pointNDotL, 2.5);                                  // tightens light
+                    lighting += u_LightColour * pointNDotL * specular *                 // add to lighting
+                        u_Colour.rgb * lightLaw * u_pointScalar * u_pointLightOn[i];	// turns off and on
+                }
+
+    			lighting += u_AmbientLight * u_Colour.rgb;                               // add ambiance
+
+
+				lighting += vec3(1.0, 1.0, 1.0) * 0.5 * u_projector;                     // for projector slide done without if for optimisation
+
+
+				if(u_isTextured && u_globalTextures) {
+					vec4 textureColour = texture2D(u_texture, v_textureCoord);
+					lighting *= textureColour.rgb;
+				}
+
+				gl_FragColor = vec4(lighting, u_Colour.a);
+			} else
+				gl_FragColor = u_Colour;                                                 // if no lighting just use colour
+        }
+    </script>
+
+  </head>
+
+  <body onload="main()">
+    <canvas class="canvas" id="canv">
+        Update broweser, or use one that supports HTML5 (particularly canvas)
+    </canvas>
+	<div class="toggle" id = "show"><< Show</div>
+    <div class="sideBar">
+        <div class="fps">FPS: <span id="rate">60</span></div>
+		<div class="toggle" id = "hide">Hide >></div>
+        <div class="toggleButtons">
+            <div class="toggleSelect" id="toggleNormal">Normal</div>
+            <div id="toggleObject">Object</div>
+        </div>
+        <div class="instructions" id="normalMode">
+            <div> W,A,S,D -> Move </div>
+            <div> Arrow Keys -> Rotate </div>
+            <div> R/F -> Up/Down </div>
+            <div> MOUSE drag -> Rotate Classroom </div>
+			<div> SCROLL wheel -> Zoom </div>
+            <div> O -> Reset Camera </div>
+            <div> P -> Open Door </div>
+            <div> T -> Toggle Roof </div>
+            <div> <span class="move">Transparency:</span>
+                <label class = "toggleSwitch">
+                    <input id = "transparency" type = "checkbox">
+                        <span class = "toggleSlide"></span>
+                    </input>
+                </label>
+            </div>
+            <div> 7/8, 9/0 -> Whiteboards </div>
+			<div> G -> Toggle Textures: </div>
+			<div> TOGGLE LIGHTS: </div>
+			<div> 1 -> Ambient </div>
+			<div> 2 -> Directional </div>
+			<div class="addHeight">
+				<label class="move" for="directFader">     Adjust: </label>
+				<input class="fader" type="range" min="0" max="2" value="0.5" id="directFader" step="0.05"></input>
+			</div>
+			<div> 3,4,5 -> Point </div>
+            <div class="addHeight">
+				<label class="move" for="pointFader">     Adjust: </label>
+				<input class="fader" type="range" min="0" max="1" value="0.5" id="pointFader" step="0.05"></input>
+			</div>
+			<div> 6 -> Projector </div>
+			<div> CTRL -> Toggle Mode </div>
+        </div>
+        <div class="instructions" id="objectMode">
+            <div> N -> Next </div>
+            <div> P -> Previous </div>
+            <div> L -> Reset current </div>
+            <div> O -> Reset all </div>
+            <div> W,A,S,D -> Move </div>
+            <div> R/F -> UP/DOWN </div>
+            <div> Arrow Keys -> Rotate </div>
+            <div> MOUSE drag -> Rotate </div>
+            <div> CTRL -> Toggle Mode </div>
+        </div>
+    </div>
+  </body>
+</html>

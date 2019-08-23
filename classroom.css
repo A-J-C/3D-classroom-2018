@@ -1,0 +1,171 @@
+html, body {
+    margin: 0;
+    overflow: hidden;
+}
+
+.canvas {
+    margin: 0;
+    padding: 0;
+    display: block;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
+
+.binded {
+    cursor: -webkit-grab;
+}
+
+.sideBar {
+    background: rgba(100, 100, 100, 0.5);
+    width: 275px;
+    position: absolute;
+    right: 0;
+    color: white;
+    padding-bottom: 25px;
+    transition: 1s;
+}
+
+.sideBar.hidden {
+    right: -275px;
+}
+
+.instructions div {
+    padding: 5px;
+    padding-bottom: 0;
+}
+
+.instructions {
+    padding: 0 15px 15px 15px;
+    font-family: "Courier New";
+}
+
+.fps, .toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 20px;
+    margin: 20px;
+    margin-top: 0;
+    padding: 10px;
+}
+
+.fps {
+    width: 80px;
+}
+
+.toggle {
+    background: rgba(64, 183, 220, 0.6);
+    left: 0;
+    right: auto;
+    margin: 0;
+    color: white;
+}
+
+.toggle#show {
+    left: auto;
+    right: -100px;
+    transition: right 1s;
+}
+
+.toggle#show.show {
+    right: 0;
+}
+
+.toggle:hover {
+    cursor: pointer;
+    background: rgba(64, 183, 220, 0.9);
+}
+
+.toggleButtons {
+    margin: 70px 30px 15px 30px;
+    height: 40px;
+}
+
+.toggleButtons div {
+    width: calc(50% - 20px);
+    padding: 10px;
+    float: left;
+    background: rgba(0,0,0,0.15);
+    font-family: "Trebuchet MS";
+    font-size: 20px;
+}
+
+.toggleButtons .toggleSelect {
+    background: #205B6E;
+}
+
+.toggleButtons div:hover {
+    cursor: pointer;
+    background: rgba(32, 91, 110, 0.6);
+}
+
+.toggleSwitch {
+    width: 40px;
+    height: 18px;
+    display: inline-block;
+    position: relative;
+    margin-left: 135px;
+}
+
+.toggleSwitch > input {
+    display: none;
+}
+
+.toggleSlide {
+    position: absolute;
+    background: #AAA;
+    bottom: 0;
+    top: 0;
+    right: 0;
+    left: 0;
+    border-radius: 34px;
+}
+
+.toggleSlide:hover {
+    cursor: pointer;
+}
+
+.toggleSlide:before {
+    position: absolute;
+    content: "";
+    width: 11px;
+    height: 11px;
+    left: 4px;
+    bottom: 4px;
+    background: #FFF;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggleSlide {
+    background: #205B6E;
+}
+
+input:focus + .toggleSlide {
+    box-shadow: 0 0 1px #205B6E;
+}
+
+input:checked + .toggleSlide:before {
+    transform: translateX(21px);
+}
+
+.move {
+    position: absolute;
+}
+
+.fader {
+    width: 70px;
+    position: absolute;
+    right: 10px;
+    margin-top: -2px;
+}
+
+.fader:hover {
+    cursor: pointer;
+}
+
+.addHeight {
+    height: 20px;
+    margin-left: 70px;
+}
